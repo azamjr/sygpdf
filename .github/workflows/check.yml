@@ -4,21 +4,20 @@ permissions:
   contents: read
 jobs:
   check:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-      - run: sudo apt-get update && sudo apt-get install -y libreoffice-writer tesseract-ocr-eng libseccomp2
-      - run: pip install -r requirements.txt
-      - run: python tests/check.py
-
+      - uses: actions/checkout@v5
+      - name: Build the production image
+        run: docker build -t sygpdf-ci .
+      - name: Check PDF tools
+        run: docker run --rm -v "$PWD/tests:/app/tests:ro" sygpdf-ci python tests/check.py
       - name: Check HTTPS hosting configuration
-        run: python tests/check.py
-        env:
-          RENDER_EXTERNAL_URL: https://sygpdf-test.example
-          SYGPDF_TEST_HOST: sygpdf-test.example
-          SYGPDF_TEST_ORIGIN: https://sygpdf-test.example
+        run: |
+          docker run --rm -v "$PWD/tests:/app/tests:ro" \
+            -e RENDER_EXTERNAL_URL=https://sygpdf-test.example \
+            -e SYGPDF_TEST_HOST=sygpdf-test.example \
+            -e SYGPDF_TEST_ORIGIN=https://sygpdf-test.example \
+            sygpdf-ci python tests/check.py
       - name: Check hosting boundaries
-        run: python tests/hosting.py
+        run: docker run --rm -v "$PWD/tests:/app/tests:ro" sygpdf-ci python tests/hosting.py
