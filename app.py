@@ -1,4 +1,4 @@
-"""Single-user PDF workspace, served on loopback."""
+"""PDF workspace for local use or an HTTPS container host."""
 import asyncio
 import json
 import os
@@ -7,6 +7,7 @@ import sys
 import signal
 import tempfile
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from aiohttp import web
 
@@ -17,9 +18,27 @@ TOOLS = set("merge split organize rotate compress protect unlock watermark numbe
 
 @web.middleware
 async def privacy(request, handler):
-    if request.host not in {"127.0.0.1:8765", "localhost:8765"}:
-        raise web.HTTPForbidden()
-    response = await handler(request)
+    try:
+        port = os.getenv("PORT", "8765")
+        hosts = {"127.0.0.1:" + port, "localhost:" + port}
+        origins = set()
+        public_url = os.getenv("SYGPDF_PUBLIC_URL") or os.getenv("RENDER_EXTERNAL_URL")
+        if public_url:
+            url = urlsplit(public_url)
+            if url.scheme != "https" or not url.netloc or url.path not in {"", "/"}:
+                raise web.HTTPServiceUnavailable(text="Invalid public URL configuration.")
+            hosts.add(url.netloc)
+            origins.add("https://" + url.netloc)
+        if request.host not in hosts:
+            raise web.HTTPForbidden()
+        origins.add("http://" + request.host)
+        # Use the configured public HTTPS URL, never an untrusted forwarded header.
+        origin = request.headers.get("Origin")
+        if request.method == "POST" and origin and origin not in origins:
+            raise web.HTTPForbidden()
+        response = await handler(request)
+    except web.HTTPException as exc:
+        response = exc
     response.headers.update({
         "Cache-Control": "no-store",
         "Referrer-Policy": "no-referrer",
@@ -29,13 +48,15 @@ async def privacy(request, handler):
     return response
 
 
+async def health(request):
+    return web.json_response({"status": "ok", "tools": sorted(TOOLS)})
+
+
 async def index(request):
     return web.FileResponse(ROOT / "static/index.html")
 
 
 async def process(request):
-    if request.headers.get("Origin", "http://" + request.host) != "http://" + request.host:
-        raise web.HTTPForbidden()
     if request.content_type != "multipart/form-data":
         raise web.HTTPBadRequest(text="Select files using the tool form.")
     if request.app["slot"].locked():
@@ -64,8 +85,15 @@ async def process(request):
         except (ValueError, AssertionError, KeyError) as exc:
             return web.json_response({"error": str(exc)}, status=400)
         scratch = tempfile.TemporaryDirectory(prefix="sygpdf-")
+        # Converters receive no hosting credentials or application secrets.
+        worker_env = {key: os.environ[key] for key in (
+            "PATH", "LANG", "LC_ALL", "LD_LIBRARY_PATH", "TESSDATA_PREFIX",
+            "SYSTEMROOT", "PYTHONPATH"
+        ) if key in os.environ}
+        worker_env.update({"TMPDIR": scratch.name, "HOME": scratch.name,
+                           "PYTHONDONTWRITEBYTECODE": "1"})
         worker = await asyncio.create_subprocess_exec(sys.executable, str(ROOT / "worker.py"),
-            start_new_session=True, env={**os.environ, "TMPDIR": scratch.name, "HOME": scratch.name}, stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.DEVNULL)
+            start_new_session=True, env=worker_env, stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.DEVNULL)
         try:
             output, _ = await asyncio.wait_for(worker.communicate(pickle.dumps((tool, files, opts))), timeout=90)
         except asyncio.TimeoutError:
@@ -87,9 +115,14 @@ async def process(request):
             "Content-Disposition": "attachment; filename*=UTF-8''" + quote(filename,safe="")})
 
 
-if __name__ == "__main__":
+def create_app():
     app = web.Application(middlewares=[privacy], client_max_size=LIMIT)
     app["slot"] = asyncio.Semaphore(1)
-    app.add_routes([web.get("/", index), web.post("/api/process", process)])
+    app.add_routes([web.get("/", index), web.post("/api/process", process), web.get("/healthz", health)])
     app.router.add_static('/assets/', ROOT / 'static/assets')
-    web.run_app(app, host=os.getenv("SYGPDF_BIND","127.0.0.1"), port=8765, access_log=None)
+    return app
+
+
+if __name__ == "__main__":
+    web.run_app(create_app(), host=os.getenv("SYGPDF_BIND", "127.0.0.1"),
+                port=int(os.getenv("PORT", "8765")), access_log=None)

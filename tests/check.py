@@ -1,5 +1,6 @@
 """Functional smoke check with synthetic documents, exercised over HTTP."""
 import asyncio
+import os
 import io
 import sys
 import zipfile
@@ -28,7 +29,8 @@ async def main():
             data.add_field('opts', json.dumps(options))
             for name, content in files:
                 data.add_field('files', content, filename=name)
-            response = await client.post('/api/process', data=data, headers={'Host':'localhost:8765'})
+            response = await client.post('/api/process', data=data, headers={'Host': os.getenv('SYGPDF_TEST_HOST', 'localhost:8765'),
+                        **({'Origin': os.environ['SYGPDF_TEST_ORIGIN']} if 'SYGPDF_TEST_ORIGIN' in os.environ else {})})
             result = await response.read()
             assert response.status == 200, (tool, result[:240])
             print(tool, response.status)
