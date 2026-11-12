@@ -119,19 +119,133 @@ The existing Render service was created directly. `render.yaml` provides a repro
 
 For documentation-only commits, `[skip render]` in the commit message avoids an unnecessary Render auto-deploy.
 
-## Run locally with Docker
+## Run locally with Docker on Windows, macOS or Linux
 
-Install Docker and Docker Compose, then run:
+Local Docker runs all 13 tools on your computer, including Office conversion and English/Malay OCR. Docker supplies the Linux environment required by the conversion worker. You do not need to install Python, LibreOffice or Tesseract on the host.
+
+The initial installation/build and later updates need Internet access. After the image is built, the app can process documents offline. Keep Docker running and open **http://127.0.0.1:8765** for local processing. The Render URL always uses the online service.
+
+### 1. Install Docker for your operating system
+
+| Operating system | Setup |
+| --- | --- |
+| Windows | Install Docker Desktop using its WSL 2 backend. Use Linux containers. |
+| macOS | Install Docker Desktop matching your Mac's Apple silicon or Intel processor. |
+| Ubuntu and other Linux distributions | Install Docker Engine with the Docker Compose plugin using the instructions for your distribution. Docker Desktop for Linux is also an option. |
+
+Check Docker's current operating system and hardware requirements before installing.
+
+- [Docker Desktop for Windows](https://docs.docker.com/desktop/setup/install/windows-install/)
+- [Docker Desktop for Mac](https://docs.docker.com/desktop/setup/install/mac-install/)
+- [Docker Engine for Ubuntu](https://docs.docker.com/engine/install/ubuntu/)
+- [Docker Engine for other Linux distributions](https://docs.docker.com/engine/install/)
+
+**Windows**
+
+1. If WSL is not installed, open PowerShell as Administrator and run:
+
+   ```powershell
+   wsl --install
+   ```
+
+2. Restart Windows if requested. Update WSL:
+
+   ```powershell
+   wsl --update
+   ```
+
+3. Install and launch Docker Desktop. Enable **Use the WSL 2 based engine** in its settings where available. Ensure it is using Linux containers.
+4. Install [Git for Windows](https://git-scm.com/downloads/win) if you want to use the Git download method below. Open a new PowerShell window after installation.
+
+**macOS**
+
+1. Choose **Apple menu → About This Mac** to identify Apple silicon or Intel.
+2. Install the matching Docker Desktop download and open Docker from Applications. Complete its first-start setup.
+3. Open Terminal. Run `git --version`. If macOS offers to install command line developer tools, complete that installation before cloning, or use the ZIP download method below.
+
+**Linux**
+
+1. Follow the official installation guide for your distribution, including the Compose plugin.
+2. Start the Docker service as described in that guide and install Git using your distribution's package manager.
+3. If Docker commands require administrator access, prefix each `docker` command below with `sudo`, including verification, startup, logs and shutdown.
+
+### 2. Verify Docker is ready
+
+Launch Docker Desktop on Windows/macOS and wait for the engine to start. In PowerShell or Terminal, run:
+
+```sh
+docker version
+docker compose version
+```
+
+The first command should show both client and server information. The second should report a Compose version.
+
+### 3. Download and start sygpdf
+
+Run these commands in PowerShell on Windows, or Terminal on macOS/Linux:
 
 ```sh
 git clone https://github.com/azamjr/sygpdf.git
 cd sygpdf
-docker compose up --build
+docker compose up --build -d
 ```
 
-Open **http://127.0.0.1:8765**. Stop the app with **Ctrl+C**.
+Alternatively, choose **Code → Download ZIP** on the [repository](https://github.com/azamjr/sygpdf), extract it, then open a terminal in the extracted folder containing `compose.yaml`. Run `docker compose up --build -d` there.
 
-The initial build requires Internet access to download dependencies. The Docker image includes LibreOffice, the Tesseract executable, English and Malay OCR data, and the Python packages. Compose exposes the app on your computer's loopback address.
+The first build downloads the image and dependencies and can take several minutes. Docker includes LibreOffice, Tesseract, English/Malay OCR data and the Python packages.
+
+Check that the service is running:
+
+```sh
+docker compose ps
+```
+
+Open **http://127.0.0.1:8765**. Select a tool, choose files, adjust its options, process and save the result. All 13 tools are available locally. The regular file-size and processing-time limits still apply.
+
+To check the web service, open **http://127.0.0.1:8765/healthz** in your browser. It should return `"status": "ok"`. Verify conversion with a small sample document as well.
+
+### Start, stop and update
+
+Run these commands from the folder containing `compose.yaml`.
+
+| Action | Command |
+| --- | --- |
+| Start an already built app | `docker compose up -d` |
+| View logs | `docker compose logs --tail=100 sygpdf` |
+| Stop the app | `docker compose stop` |
+| Remove the stopped/running app container | `docker compose down` |
+
+To update a Git checkout:
+
+```sh
+git pull --ff-only
+docker compose up --build -d
+```
+
+Save any local edits before updating. If you downloaded a ZIP, download the latest ZIP into a separate folder. Run `docker compose down` in the old folder, then build/start from the new folder.
+
+Keep Docker running while using the app. After restarting your computer, start Docker and run `docker compose up -d` again.
+
+### Local privacy and troubleshooting
+
+The Compose configuration publishes the app only on `127.0.0.1` and mounts no host document folders. Files selected in the local interface are processed in the browser or the local container. Job temporary files are cleaned up after processing. Downloads remain in the location selected in your browser.
+
+Local processing reduces exposure to hosting providers. Your computer, browser extensions, backup tools and any cloud-synced download folders still affect document privacy. Use a local folder outside cloud sync when documents must stay on the device.
+
+| Problem | Resolution |
+| --- | --- |
+| Cannot connect to Docker daemon | Start Docker Desktop or the Linux Docker service, wait for it to be ready, then retry. |
+| Windows WSL/virtualization error | Check Docker's Windows requirements, enable hardware virtualization if needed, update WSL and restart. |
+| Docker reports a Windows container/image mismatch | Switch Docker Desktop to Linux containers. |
+| `docker compose` is unavailable | Install/update Docker Desktop or the Linux Compose plugin. |
+| Linux permission denied connecting to Docker | Run the Docker commands with `sudo`, or follow Docker's documented user-access setup. |
+| No configuration file found | Change directory to the extracted/cloned folder containing `compose.yaml`. |
+| Port 8765 already allocated | Stop the other application/container using that port, then retry. |
+| Build download fails | Check Internet access and retry `docker compose up --build -d`. |
+| App fails after startup | Check `docker compose ps` and `docker compose logs --tail=100 sygpdf`. |
+| Large OCR/Office conversion fails | Try fewer pages. The app has worker limits, a 64 MiB temporary filesystem and a 1536 MiB container memory limit. |
+
+Windows and macOS instructions use the repository's Linux Docker image. Native Python execution on those operating systems is not supported by the current Linux-specific worker.
 
 ## Run directly on Ubuntu
 
