@@ -77,6 +77,21 @@ def open_docker_desktop():
             if location.is_file():
                 subprocess.Popen([str(location)])
                 return
+    if system == "Linux" and shutil.which("systemctl"):
+        for command in (
+            ["systemctl", "--user", "start", "docker"],
+            ["systemctl", "--user", "start", "docker-desktop"],
+            ["systemctl", "start", "docker"],
+        ):
+            try:
+                result = subprocess.run(
+                    command, stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL, timeout=30, check=False,
+                )
+                if result.returncode == 0:
+                    return
+            except subprocess.TimeoutExpired:
+                continue
     raise RuntimeError(
         "Start Docker and ensure your user can run it, then launch this file again."
     )
@@ -87,7 +102,7 @@ def main():
         raise RuntimeError("Extract the entire project and keep this launcher beside compose.yaml.")
     docker = find_docker()
     if not ready(docker, "info"):
-        print("Starting Docker Desktop...", flush=True)
+        print("Starting Docker...", flush=True)
         open_docker_desktop()
         wait_until(
             lambda: ready(docker, "info"),
@@ -128,3 +143,4 @@ if __name__ == "__main__":
         except EOFError:
             pass
         raise SystemExit(1)
+

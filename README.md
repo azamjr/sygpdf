@@ -125,6 +125,29 @@ Local Docker runs all 13 tools on your computer, including Office conversion and
 
 The initial installation/build and later updates need Internet access. After the image is built, the app can process documents offline. Keep Docker running and open **http://127.0.0.1:8765** for local processing. The Render URL always uses the online service.
 
+### Install a desktop shortcut
+
+For everyday use, create a **sygpdf shortcut on your Desktop** once. After setup, double-click that desktop icon to start Docker, start the local app and open your browser automatically.
+
+1. Install **Python 3.9 or later** and Docker using the instructions below.
+2. Download/extract the whole repository, or update your Git checkout. Put the project folder in a permanent location before installing the shortcut.
+3. Double-click `Install-desktop-shortcut.py` if Python files are associated with a Python runner. Otherwise open a terminal in the project folder and run the installation command below.
+4. A **sygpdf** shortcut appears on your Desktop. Double-click it whenever you want to use the app.
+
+| System | One-time installation command | Desktop shortcut created |
+| --- | --- | --- |
+| Windows | `py Install-desktop-shortcut.py` | `sygpdf.lnk` |
+| macOS | `python3 Install-desktop-shortcut.py` | `sygpdf.command` |
+| Linux | `python3 Install-desktop-shortcut.py` | `sygpdf.desktop` |
+
+On Windows the installer uses the configured Desktop folder, including a redirected Desktop. On macOS, approve Desktop folder access if prompted. On Linux, right-click the new icon and select **Allow Launching** if your desktop requests it. Desktop environments without desktop icon support can open the shortcut through a compatible file manager or use the launcher directly.
+
+The shortcut runs `Start-sygpdf.py` from the project folder in a terminal. On Windows/macOS it opens Docker Desktop when needed. On Linux it tries the rootless Docker service, Docker Desktop user service, then the system Docker service. Starting a system service may require your operating system's authentication. Your user must already have permission to use Docker. The launcher waits for the local app before opening **http://127.0.0.1:8765**.
+
+The first build needs Internet access and can take several minutes. Keep the project folder and Python installed at their current locations. If you move the folder or replace Python, rerun the installer to update the shortcut. Reinstalling replaces the same-named sygpdf shortcut. Removing the desktop shortcut only removes that launcher entry.
+
+The app runs in the background after startup. Stop it through Docker Desktop or run `docker compose stop` in the project folder. Closing the browser or launcher window does not stop the container.
+
 ### Click to launch after downloading
 
 Extract the whole repository ZIP before launching. Keep the launcher files beside `compose.yaml`, `Dockerfile` and the rest of the source.
@@ -180,7 +203,7 @@ py Start-sygpdf.py
 python3 Start-sygpdf.py
 ```
 
-The launcher attempts to start Docker Desktop on Windows/macOS if necessary. On Linux, start Docker and configure user access first. It shows build errors in the terminal and keeps the error message available until Enter is pressed. The app continues running in the background after a successful launch; use `docker compose stop` to stop it.
+The Python launcher attempts to start Docker Desktop on Windows/macOS or the Docker service on Linux if necessary. Configure Docker user access first. It shows build errors in the terminal and keeps the error message available until Enter is pressed. The app continues running in the background after a successful launch; use `docker compose stop` to stop it.
 
 ### 1. Install Docker for your operating system
 
