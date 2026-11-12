@@ -93,6 +93,17 @@ def wait_until(check, seconds, message):
     raise RuntimeError(message)
 
 
+def docker_info_error(docker):
+    try:
+        result = subprocess.run(
+            [docker, "info"], cwd=ROOT, capture_output=True,
+            text=True, timeout=5, check=False,
+        )
+    except subprocess.TimeoutExpired:
+        return "Docker did not respond within five seconds."
+    return (result.stderr or result.stdout).strip()[-1200:]
+
+
 def open_docker_desktop():
     system = platform.system()
     if system == "Darwin":
@@ -134,13 +145,22 @@ def main():
         raise RuntimeError("Extract the entire project and keep this launcher beside compose.yaml.")
     docker = find_docker()
     if not ready(docker, "info"):
+        error = docker_info_error(docker)
+        if platform.system() == "Linux" and "permission denied" in error.lower():
+            raise RuntimeError(
+                "Your Ubuntu account cannot access Docker. Log out and back in "
+                "after joining the docker group, then retry.\n" + error
+            )
         print("Starting Docker...", flush=True)
         open_docker_desktop()
-        wait_until(
-            lambda: ready(docker, "info"),
-            120,
-            "Docker did not become ready. Open Docker Desktop and try again.",
-        )
+        try:
+            wait_until(
+                lambda: ready(docker, "info"),
+                120,
+                "Docker did not become ready.",
+            )
+        except RuntimeError as exc:
+            raise RuntimeError(str(exc) + "\n" + docker_info_error(docker)) from exc
     if not ready(docker, "compose", "version"):
         raise RuntimeError("Install the Docker Compose plugin or update Docker Desktop.")
     print("Starting sygpdf. The first build can take several minutes.", flush=True)
