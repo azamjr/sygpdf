@@ -17,21 +17,53 @@ def find_docker():
     executable = shutil.which("docker")
     if executable:
         return executable
+    system = platform.system()
     candidates = [
+        Path.home() / ".docker/bin/docker",
+        Path.home() / ".local/bin/docker",
         Path("/usr/local/bin/docker"),
-        Path("/Applications/Docker.app/Contents/Resources/bin/docker"),
+        Path("/usr/bin/docker"),
+        Path("/snap/bin/docker"),
     ]
-    if platform.system() == "Windows":
-        candidates = [
+    if system == "Darwin":
+        candidates.append(Path("/Applications/Docker.app/Contents/Resources/bin/docker"))
+        candidates.append(Path.home() / "Applications/Docker.app/Contents/Resources/bin/docker")
+    if system == "Windows":
+        installations = [
             Path(os.environ.get("ProgramFiles", "C:/Program Files"))
-            / "Docker/Docker/resources/bin/docker.exe",
+            / "Docker/Docker",
             Path(os.environ.get("LOCALAPPDATA", ""))
-            / "Programs/DockerDesktop/resources/bin/docker.exe",
+            / "Programs/DockerDesktop",
+        ]
+        candidates = [
+            installation / relative
+            for installation in installations
+            for relative in ("resources/bin/docker.exe", "bin/docker.exe")
         ]
     for candidate in candidates:
-        if candidate.is_file():
+        if candidate.is_file() and os.access(candidate, os.X_OK):
             return str(candidate)
-    raise RuntimeError("Install Docker first. See the local setup instructions in README.md.")
+    instructions = {
+        "Windows": (
+            "Install Docker Desktop with the WSL 2 backend and Linux containers.\n"
+            "https://docs.docker.com/desktop/setup/install/windows-install/"
+        ),
+        "Darwin": (
+            "Install Docker Desktop for your Mac's Apple silicon or Intel processor.\n"
+            "https://docs.docker.com/desktop/setup/install/mac-install/"
+        ),
+        "Linux": (
+            "Install Docker Engine and the Docker Compose plugin for your distribution.\n"
+            "https://docs.docker.com/engine/install/"
+        ),
+    }
+    raise RuntimeError(
+        "Docker CLI was not found on PATH or in common installation folders.\n"
+        + instructions.get(system, "See README.md for supported operating systems.")
+        + "\nAfter installation, start Docker and launch sygpdf again."
+        + "\nIf Docker is already installed, run docker version in a terminal."
+        + "\nA custom Docker installation must make its docker command available on PATH."
+    )
 
 
 def run_docker(docker, *arguments, quiet=False, timeout=None):

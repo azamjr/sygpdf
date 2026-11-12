@@ -314,6 +314,7 @@ Local processing reduces exposure to hosting providers. Your computer, browser e
 
 | Problem | Resolution |
 | --- | --- |
+| Launcher reports Docker CLI was not found / Install Docker first | Install Docker Desktop on Windows/macOS or Docker Engine plus Compose on Linux. Start Docker, then retry. If already installed, run `docker version` in a terminal. Update the project to use the launcher's expanded installation-folder search. Custom installations must put the Docker CLI on PATH. |
 | Cannot connect to Docker daemon | Start Docker Desktop or the Linux Docker service, wait for it to be ready, then retry. |
 | Windows WSL/virtualization error | Check Docker's Windows requirements, enable hardware virtualization if needed, update WSL and restart. |
 | Docker reports a Windows container/image mismatch | Switch Docker Desktop to Linux containers. |
