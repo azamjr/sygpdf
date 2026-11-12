@@ -125,6 +125,38 @@ Local Docker runs all 13 tools on your computer, including Office conversion and
 
 The initial installation/build and later updates need Internet access. After the image is built, the app can process documents offline. Keep Docker running and open **http://127.0.0.1:8765** for local processing. The Render URL always uses the online service.
 
+### Click to launch after downloading
+
+Extract the whole repository ZIP before launching. Keep the launcher files beside `compose.yaml`, `Dockerfile` and the rest of the source.
+
+| Operating system | Launcher | How to use |
+| --- | --- | --- |
+| Windows | `Start-sygpdf.cmd` | Double-click it in File Explorer. It opens Command Prompt automatically. |
+| macOS | `Start-sygpdf.command` | Double-click it in Finder after granting execute permission once. |
+| Linux | `start.sh` | Mark it executable, then choose **Run in Terminal** in a file manager that supports executable scripts. |
+
+These are local launcher scripts. Install Docker as described below first. On Windows and macOS, the launcher attempts to open Docker Desktop if its engine is stopped. On Linux, start Docker and configure user access first. It builds/starts the container, checks the app responds, then opens **http://127.0.0.1:8765** in your default browser. On a Linux system without `xdg-open`, open that address manually.
+
+The first launch needs Internet access and may take several minutes. Subsequent launches reuse downloaded build layers. Once started, the app runs in the background even when the launcher terminal closes. Stop it by running `docker compose stop` from the project folder, or use Docker Desktop's stop control for the project.
+
+For macOS, open Terminal in the extracted project folder and run once:
+
+```sh
+chmod +x Start-sygpdf.command start.sh
+```
+
+If macOS blocks a downloaded script, review the files and follow the operating system's approval prompt for that file. You can also run `sh ./start.sh` from Terminal.
+
+For Linux, open Terminal in the project folder and run once:
+
+```sh
+chmod +x start.sh
+```
+
+File managers vary. If double-clicking opens a text editor, choose **Run in Terminal** if offered, or run `./start.sh` from Terminal. Launchers need permission to use Docker. If your Linux installation requires `sudo`, use the manual Docker commands below with `sudo`; configure Docker user access using its official guide before using the click launcher.
+
+Launching uses the source already downloaded on your computer. To get a newer version, follow the update instructions below.
+
 ### 1. Install Docker for your operating system
 
 | Operating system | Setup |
