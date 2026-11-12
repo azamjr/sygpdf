@@ -157,6 +157,31 @@ File managers vary. If double-clicking opens a text editor, choose **Run in Term
 
 Launching uses the source already downloaded on your computer. To get a newer version, follow the update instructions below.
 
+### Python launcher
+
+`Start-sygpdf.py` provides the same startup flow using Python's standard library. Install **Python 3.9 or later** and Docker first. No extra Python packages are required for the launcher; the PDF engines run inside Docker.
+
+1. Download/extract the entire project, or update your Git checkout.
+2. Keep `Start-sygpdf.py` beside `compose.yaml`.
+3. Double-click `Start-sygpdf.py` if your operating system associates Python files with a Python runner.
+4. Wait for the first build. The launcher checks that the app responds before opening **http://127.0.0.1:8765**.
+
+On Windows, choose Python as the application for `.py` files if they open in an editor. On macOS, use **Open With → Python Launcher** if available in your Python installation. On Linux, allow executable scripts and choose **Run in Terminal** if your file manager supports it. File associations and security prompts vary, so the existing OS-specific launchers are also available.
+
+You can always start the Python launcher from the project folder:
+
+```powershell
+# Windows
+py Start-sygpdf.py
+```
+
+```sh
+# macOS or Linux
+python3 Start-sygpdf.py
+```
+
+The launcher attempts to start Docker Desktop on Windows/macOS if necessary. On Linux, start Docker and configure user access first. It shows build errors in the terminal and keeps the error message available until Enter is pressed. The app continues running in the background after a successful launch; use `docker compose stop` to stop it.
+
 ### 1. Install Docker for your operating system
 
 | Operating system | Setup |
