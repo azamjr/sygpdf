@@ -11,7 +11,7 @@ The GitHub website redirects to the full app on Render. All 13 tools are availab
 1. Open [sygpdf](https://sygpdf.onrender.com/). If the free server is waking up, allow extra time for the first load.
 2. Select a tool from the sidebar.
 3. Click **Choose files**, or drag your files into the upload area.
-4. Set the available options. For tools that accept multiple files, use the up/down arrows beside each file to change their order.
+4. Set the available options. For tools that accept multiple files, use the up/down arrows beside each file to change their order. For **Organize pages**, drag the page previews into order or use the arrows beneath each preview.
 5. Click the tool's processing button. Merge, Organize and Rotate use **Process on this device**.
 6. Wait for **Your file is ready**. The browser starts the download. You can also click the download link again, or **Preview** for PDF output.
 7. Save the result before switching tools or closing the page. The app has no job history or recovery list.
@@ -22,7 +22,7 @@ The GitHub website redirects to the full app on Render. All 13 tools are availab
 | --- | --- | --- |
 | Merge PDF | Select multiple PDFs and arrange them with the arrows. | One PDF in the selected order. |
 | Split PDF | Select one PDF. Enter page numbers/ranges, or leave the selection empty to split every page. | One PDF or a ZIP containing multiple PDFs. |
-| Organize pages | Enter the pages to retain in the order you want, such as `3,1-2`. Omit pages you want removed. | One reordered or shortened PDF. |
+| Organize pages | Select one PDF, drag page previews to reorder, or use the arrow buttons. Remove unwanted pages with ×; use **Reset pages** to restore the original order and all pages. | One reordered or shortened PDF, processed on your device. |
 | Rotate PDF | Choose 90°, 180° or 270° clockwise. Enter selected pages, or leave blank for all pages. | A rotated PDF. |
 | Compress PDF | Select one PDF and a compression setting. | A PDF optimized with lossless cleanup. Savings depend on the input. |
 | Protect PDF | Enter a new password for one PDF. | A password-protected PDF using AES-256. |
@@ -38,7 +38,7 @@ The GitHub website redirects to the full app on Render. All 13 tools are availab
 
 Page numbers start at **1**.
 
-- **Organize:** `3,1-2` keeps page 3 first, followed by pages 1 and 2. Pages omitted from the selection are removed.
+- **Organize:** Drag page 3 ahead of pages 1 and 2; remove any pages you do not want in the download. The page cards show the original page numbers.
 - **Split:** `1-3,4-6` produces two PDFs, delivered in a ZIP. Leaving the field blank creates a separate PDF for each page.
 - **Rotate:** `1,3-5` rotates only those pages. Leaving it blank rotates all pages.
 
@@ -384,4 +384,4 @@ Initial live verification covered all 13 processing operations, Word/Excel/Power
 
 Current features are the 13 tools listed above. Permanent redaction, PDF/A conversion, editable PDF-to-Office conversion, HTML-to-PDF conversion, repair and signature workflows are not implemented.
 
-The app uses aiohttp, PyMuPDF, Pillow, pdf-lib, LibreOffice and Tesseract. Dependency versions are recorded in `requirements.txt` and the Dockerfile. Review each dependency's license before redistribution or commercial hosting. PyMuPDF offers AGPL and commercial licensing; its license does not by itself establish a license for this repository's original code.
+The app uses aiohttp, PyMuPDF, Pillow, pdf-lib, PDF.js, LibreOffice and Tesseract. Organize page previews use a locally hosted PDF.js 4.10.38 bundle; its license is in `static/assets/pdfjs-LICENSE.txt`. Dependency versions are recorded in `requirements.txt`, the Dockerfile and bundled asset names. Review each dependency's license before redistribution or commercial hosting. PyMuPDF offers AGPL and commercial licensing; its license does not by itself establish a license for this repository's original code.
